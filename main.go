@@ -1,8 +1,8 @@
 package main
 
 import (
-	"errors"
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -35,15 +35,21 @@ type AaGauges struct {
 	TxRateAdjusted prometheus.GaugeVec
 }
 
+//nolint:funlen
 func main() {
 	flag.Parse()
-	logrus.SetFormatter(&logrus.TextFormatter{
-		ForceColors: false, DisableColors: false, ForceQuote: false, DisableQuote: false, EnvironmentOverrideColors: false,
-		DisableTimestamp: false, FullTimestamp: false, TimestampFormat: "", DisableSorting: false, SortingFunc: nil,
-		DisableLevelTruncation: false, PadLevelText: false, QuoteEmptyFields: false, FieldMap: nil, CallerPrettyfier: nil,
+	logrus.SetFormatter(&logrus.JSONFormatter{
+		TimestampFormat:   "",
+		DisableTimestamp:  false,
+		DisableHTMLEscape: false,
+		DataKey:           "",
+		FieldMap:          nil,
+		CallerPrettyfier:  nil,
+		PrettyPrint:       false,
 	})
 
 	var (
+		listenPort    = "9902"
 		refreshSecs   = 60
 		gaugeLabels   = []string{"LineID"}
 		upstreamGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -105,17 +111,25 @@ func main() {
 			EnableOpenMetrics: true,
 		},
 	))
-	logrus.Fatal(http.ListenAndServe(":2112", nil))
+
+	customPort, isPresent := os.LookupEnv("AAISP_EXPORTER_PORT")
+	if isPresent {
+		listenPort = customPort
+	}
+
+	logrus.Infof("starting aaisp-exporter on port %s", listenPort)
+
+	logrus.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", listenPort), nil))
 }
 
 func ScheduleUpdates(gauges AaGauges, refreshSecs int) {
 	for {
-		err, vals := GetUpdatedValues()
+		vals, err := GetUpdatedValues()
 		if err != nil {
-			logrus.Error("Scheduled update failed")
+			logrus.Error("scheduled update failed")
 		} else {
 			if len(vals.Info) < 1 {
-				logrus.Error("No data returned from CHAOS API")
+				logrus.Error("no data returned from CHAOS API")
 			} else {
 				for _, lineVal := range vals.Info {
 					UpdateGauge(lineVal.QuotaMonthly, lineVal.LineID, &gauges.QuotaMonthly)
@@ -132,7 +146,7 @@ func ScheduleUpdates(gauges AaGauges, refreshSecs int) {
 	}
 }
 
-func GetUpdatedValues() (error, AaResponse) {
+func GetUpdatedValues() (AaResponse, error) {
 	var (
 		aaControlUsername = os.Getenv("AAISP_CONTROL_USERNAME")
 		aaControlPassword = os.Getenv("AAISP_CONTROL_PASSWORD")
@@ -149,18 +163,15 @@ func GetUpdatedValues() (error, AaResponse) {
 		}).
 		SetResult(AaResponse{Info: nil}).
 		Post("https://chaos2.aa.net.uk/broadband/info/json")
-
 	if err != nil {
 		if resp != nil {
-			logrus.Error(err.Error())
-			return errors.New(err.Error()), AaResponse{}
-		} else {
-			logrus.Error("Unknown failure fetching update")
-			return errors.New(err.Error()), AaResponse{}
+			return AaResponse{}, fmt.Errorf("invalid response from API: %q", err.Error())
 		}
-	} else {
-		return nil, *resp.Result().(*AaResponse)
+		// else
+		return AaResponse{}, fmt.Errorf("unknown failure fetching update: %q", err.Error())
 	}
+	// else
+	return *resp.Result().(*AaResponse), nil
 }
 
 func UpdateGauge(valStr string, lineID string, gauge *prometheus.GaugeVec) {
