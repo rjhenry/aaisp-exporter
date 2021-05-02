@@ -23,3 +23,11 @@ jobs:
 
       - name: Build
         run: go build -v ./...
+
+      - name: Collect binaries
+        uses: actions/upload-artifact@v2.2.3
+        with:
+          name: aaisp-exporter
+          path: aaisp-exporter
+          if-no-files-found: error
+          retention-days: 1
