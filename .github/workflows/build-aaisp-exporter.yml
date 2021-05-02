@@ -2,9 +2,9 @@ name: build-aaisp-exporter
 
 on:
   push:
-    branches: [ main ]
+    branches: [ add-actions ]
   pull_request:
-    branches: [ main ]
+    branches: [ add-actions ]
 
 jobs:
 
