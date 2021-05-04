@@ -23,12 +23,3 @@ jobs:
 
       - name: Build
         run: go build -v ./...
-
-      - name: Collect binaries
-        uses: actions/upload-artifact@v2.2.3
-        with:
-          name: ${{ matrix.os }}_aaisp-exporter
-          path: |
-            aaisp-exporter
-            aaisp-exporter.exe
-          if-no-files-found: error
