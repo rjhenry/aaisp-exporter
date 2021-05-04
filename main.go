@@ -14,27 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type AaResponse struct {
-	Info []AaLineData `json:"info"`
-}
-
-type AaLineData struct {
-	LineID         string `json:"id"`
-	QuotaMonthly   string `json:"quota_monthly"`
-	QuotaRemaining string `json:"quota_remaining"`
-	RxRate         string `json:"rx_rate"`
-	TxRate         string `json:"tx_rate"`
-	TxRateAdjusted string `json:"tx_rate_adjusted"`
-}
-
-type AaGauges struct {
-	QuotaMonthly   prometheus.GaugeVec
-	QuotaRemaining prometheus.GaugeVec
-	RxRate         prometheus.GaugeVec
-	TxRate         prometheus.GaugeVec
-	TxRateAdjusted prometheus.GaugeVec
-}
-
 //nolint:funlen
 func main() {
 	flag.Parse()
@@ -107,14 +86,19 @@ func main() {
 	http.Handle("/metrics", promhttp.HandlerFor(
 		registry,
 		promhttp.HandlerOpts{
-			ErrorLog: nil, ErrorHandling: 0, Registry: nil, DisableCompression: false, MaxRequestsInFlight: 0, Timeout: 0,
-			EnableOpenMetrics: true,
+			ErrorLog: nil, ErrorHandling: 0, Registry: nil, DisableCompression: false, MaxRequestsInFlight: 0,
+			Timeout: 0, EnableOpenMetrics: true,
 		},
 	))
 
-	customPort, isPresent := os.LookupEnv("AAISP_EXPORTER_PORT")
-	if isPresent {
-		listenPort = customPort
+	customPort, customPortSet := os.LookupEnv("AAISP_EXPORTER_PORT")
+	if customPortSet {
+		customPortInt, intParseErr := strconv.ParseInt(customPort, 10, 64)
+		if (intParseErr == nil) && (customPortInt > 0) && (customPortInt < 65536) {
+			listenPort = customPort
+		} else {
+			logrus.Fatal("AAISP_EXPORTER_PORT is set but invalid, bailing out")
+		}
 	}
 
 	logrus.Infof("starting aaisp-exporter on port %s", listenPort)
@@ -147,12 +131,25 @@ func ScheduleUpdates(gauges AaGauges, refreshSecs int) {
 }
 
 func GetUpdatedValues() (AaResponse, error) {
-	var (
-		aaControlUsername = os.Getenv("AAISP_CONTROL_USERNAME")
-		aaControlPassword = os.Getenv("AAISP_CONTROL_PASSWORD")
-		httpClient        = resty.New()
-	)
+	aaControlUsername, usernameSet := os.LookupEnv("AAISP_CONTROL_USERNAME")
+	if !usernameSet {
+		logrus.Fatal("AAISP_CONTROL_USERNAME is not set, bailing out")
+	} else {
+		if resty.IsStringEmpty(aaControlUsername) {
+			logrus.Fatal("AAISP_CONTROL_USERNAME is set but empty, bailing out")
+		}
+	}
 
+	aaControlPassword, passwordSet := os.LookupEnv("AAISP_CONTROL_PASSWORD")
+	if !passwordSet {
+		logrus.Fatal("AAISP_CONTROL_PASSWORD is not set, bailing out")
+	} else {
+		if resty.IsStringEmpty(aaControlPassword) {
+			logrus.Fatal("AAISP_CONTROL_PASSWORD is set but empty, bailing out")
+		}
+	}
+
+	httpClient := resty.New()
 	resp, err := httpClient.
 		R().
 		SetHeader("Content-Type", "application/json").
