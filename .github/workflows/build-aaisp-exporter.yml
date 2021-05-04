@@ -27,7 +27,7 @@ jobs:
       - name: Collect binaries
         uses: actions/upload-artifact@v2.2.3
         with:
-          name: binary
+          name: ${{ matrix.os }}_aaisp-exporter
           path: |
             aaisp-exporter
             aaisp-exporter.exe
