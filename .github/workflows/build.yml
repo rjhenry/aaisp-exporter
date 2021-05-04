@@ -32,4 +32,3 @@ jobs:
             aaisp-exporter
             aaisp-exporter.exe
           if-no-files-found: error
-          retention-days: 1
