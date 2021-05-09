@@ -9,7 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Installation instructions in README.md
+- nil
+
+### Changed
+
+- nil
+
+### Removed
+
+- nil
+
+## [1.0.1] - 2021-05-09
+
+### Added
+
+- Build more platforms and architectures when producing binary release archives
 
 ### Changed
 
@@ -33,6 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - nil
 
-[Unreleased]: https://github.com/daveio/aaisp-exporter/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/daveio/aaisp-exporter/compare/v1.0.1...HEAD
 [1.0.1]: https://github.com/olivierlacan/keep-a-changelog/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/daveio/aaisp-exporter/releases/tag/v1.0.0
