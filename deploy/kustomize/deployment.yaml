@@ -1,0 +1,51 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aaisp-exporter
+  labels:
+    app.kubernetes.io/name: aaisp-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aaisp-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aaisp-exporter
+    spec:
+      containers:
+        - name: aaisp-exporter
+          image: ghcr.io/rjhenry/aaisp-exporter:latest
+
+          ports:
+            - name: metrics
+              containerPort: 9902
+              protocol: TCP
+
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+
+          env:
+            - name: AAISP_CONTROL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: aaisp-exporter
+                  key: username
+            - name: AAISP_CONTROL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aaisp-exporter
+                  key: password
+            - name: AAISP_EXPORTER_PORT
+              value: "9902"
+
+# vim: ts=2 sw=2 et sts=2 ft=yaml
