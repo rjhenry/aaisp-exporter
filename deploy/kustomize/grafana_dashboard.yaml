@@ -6,7 +6,7 @@ metadata:
     grafana_dashboard: "1"
   name: aaisp-exporter
 data:
-  docker-hub-rate-limits.json: |
+  aaisp.json: |
     {
       "annotations": {
         "list": [
