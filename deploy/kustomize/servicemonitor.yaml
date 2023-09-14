@@ -1,0 +1,19 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/name: aaisp-exporter
+  name: aaisp-exporter
+spec:
+  endpoints:
+    - honorLabels: false
+      interval: 60s
+      path: /metrics
+      port: metrics
+      scrapeTimeout: 30s
+
+  jobLabel: aaisp-exporter
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aaisp-exporter

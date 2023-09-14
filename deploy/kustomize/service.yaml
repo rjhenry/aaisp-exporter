@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aaisp-exporter
+  labels:
+    app.kubernetes.io/name: aaisp-exporter
+spec:
+  selector:
+    app.kubernetes.io/name: aaisp-exporter
+
+  ports:
+    - name: metrics
+      # Exposed port in the service
+      port: 9902
+      # Targeted port in the pod
+      targetPort: metrics
+
+# vim: ts=2 sw=2 et sts=2 ft=yaml
